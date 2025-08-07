@@ -1,21 +1,31 @@
-#include <Arduino.h>
-#include <rtc.h>
-#include <light_sensor.h>
-#include <temp_humid_sensor.h>
-#include <relay.h>
-#include <motion_sensor.h>
+#include <mqtt.h>
+#include <wf.h>
 
-relay r(13);
-motion_sensor mt(14);
+String ssid = "j4_big_brotha";
+String password = "wokfuckboi";
+String host = "broker.hivemq.com";
+int port = 1883;
+
+mqttbroker brokeass(host, port);
+
 void setup()
 {
   Serial.begin(115200);
+  wifiscan();
+  wifi_connect(ssid.c_str(), password.c_str());
 }
 
 void loop()
 {
-  if (mt.get_motion())
-    r.turn_on();
-  else
-    r.turn_off();
+  if (!is_connected())
+    wifi_connect(ssid.c_str(), password.c_str());
+  if (!brokeass.is_broker_connected())
+  {
+    brokeass.connect();
+    brokeass.subscribe("/broken/ass");
+  }
+  brokeass.loop();
+  Serial.println(brokeass.get_message("/broken/ass"));
+  brokeass.publish("MSSV/temperature", "TIEU");
+  delay(1000);
 }
