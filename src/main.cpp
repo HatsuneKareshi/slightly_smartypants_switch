@@ -5,7 +5,8 @@
 #include <rtc.h>
 #include <light_sensor.h>
 #include <motion_sensor.h>
-
+#include <cmath>
+  
 String ssid = "j4_big_brotha";
 String password = "wokfuckboi";
 String host = "broker.hivemq.com";
@@ -13,9 +14,9 @@ int port = 1883;
 
 // Initialize sensors
 mqttbroker brokeass(host, port);
-temp_humid_sensor DHTSensor;
-light_sensor lightSensor;
-motion_sensor motionSensor;
+temp_humid_sensor DHTSensor(4);
+light_sensor lightSensor(32, 33);
+motion_sensor motionSensor(5);
 
 // Init time
 unsigned long lastPublish = 0;
@@ -42,8 +43,14 @@ void loop()
   if (millis() - lastPublish >= 10000) 
   {
     StaticJsonDocument<200> doc;  
-    doc["temperature"] = DHTSensor.get_temp();
-    doc["humidity"] = DHTSensor.get_humidity();
+    float temp = DHTSensor.get_temp();
+    float humidity = DHTSensor.get_humidity();
+    if (!isnan(temp)) doc["temperature"] = temp;
+    else doc["temperature"] = 0;
+
+    if (!isnan(humidity)) doc["humidity"] = humidity;
+    else doc["humidity"] = 0;
+
     doc["light"] = lightSensor.get_light_analog();
     doc["motion"] = motionSensor.get_motion();
 
