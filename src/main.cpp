@@ -6,9 +6,9 @@
 #include <light_sensor.h>
 #include <motion_sensor.h>
 #include <cmath>
-  
-String ssid = "j4_big_brotha";
-String password = "wokfuckboi";
+
+// String ssid = "j4_big_brotha";
+// String password = "wokfuckboi";
 String host = "broker.hivemq.com";
 int port = 1883;
 
@@ -24,41 +24,54 @@ unsigned long lastPublish = 0;
 void setup()
 {
   Serial.begin(115200);
-  wifiscan();
-  wifi_connect(ssid.c_str(), password.c_str());
+  form_host_init();
 }
 
 void loop()
 {
-  if (!is_connected())
-    wifi_connect(ssid.c_str(), password.c_str());
-  if (!brokeass.is_broker_connected())
+  if (!is_connected()) // if not connected, turn on the hotspot, host the site, handle the inputs and connect
   {
-    brokeass.connect();
-    brokeass.subscribe("/broken/ass");
+    hotspot_on();
+    form_on();
+    form_handleClient();
   }
-  brokeass.loop();
-  Serial.println(brokeass.get_message("/broken/ass"));
-  // Create a JSON document
-  if (millis() - lastPublish >= 10000) 
+  else // if already connectd, turn off the site and hotspot, do the needful
   {
-    StaticJsonDocument<200> doc;  
-    float temp = DHTSensor.get_temp();
-    float humidity = DHTSensor.get_humidity();
-    if (!isnan(temp)) doc["temperature"] = temp;
-    else doc["temperature"] = 0;
+    form_off();
+    hotspot_off();
 
-    if (!isnan(humidity)) doc["humidity"] = humidity;
-    else doc["humidity"] = 0;
+    if (!brokeass.is_broker_connected())
+    {
+      brokeass.connect();
+      brokeass.subscribe("/broken/ass");
+    }
+    brokeass.loop();
+    Serial.println(brokeass.get_message("/broken/ass"));
+    // Create a JSON document
+    if (millis() - lastPublish >= 10000)
+    {
+      StaticJsonDocument<200> doc;
+      float temp = DHTSensor.get_temp();
+      float humidity = DHTSensor.get_humidity();
+      if (!isnan(temp))
+        doc["temperature"] = temp;
+      else
+        doc["temperature"] = 0;
 
-    doc["light"] = lightSensor.get_light_analog();
-    doc["motion"] = motionSensor.get_motion();
+      if (!isnan(humidity))
+        doc["humidity"] = humidity;
+      else
+        doc["humidity"] = 0;
 
-    String jsonString;
-    serializeJson(doc, jsonString);
+      doc["light"] = lightSensor.get_light_analog();
+      doc["motion"] = motionSensor.get_motion();
 
-    brokeass.publish("MSSV/temperature", jsonString.c_str());
-    lastPublish = millis();
+      String jsonString;
+      serializeJson(doc, jsonString);
+
+      brokeass.publish("MSSV/temperature", jsonString.c_str());
+      lastPublish = millis();
+    }
   }
   delay(1000);
 }
