@@ -13,7 +13,7 @@ light_sensor::light_sensor(uint8_t d, uint8_t a)
 
 int light_sensor::get_light_analog()
 {
-    return 1023 - analogRead(this->apin);
+    return 4095 - analogRead(this->apin); // apparently on the esp32 this goes up to 12 bits
 }
 
 int light_sensor::get_light_digital()

@@ -6,6 +6,7 @@
 #include <light_sensor.h>
 #include <motion_sensor.h>
 #include <cmath>
+#include <relay.h>
 
 // String ssid = "j4_big_brotha";
 // String password = "wokfuckboi";
@@ -17,6 +18,7 @@ mqttbroker brokeass(host, port);
 temp_humid_sensor DHTSensor(4);
 light_sensor lightSensor(32, 33);
 motion_sensor motionSensor(5);
+relay rl(14);
 
 // Init time
 unsigned long lastPublish = 0;
@@ -26,6 +28,18 @@ void setup()
   Serial.begin(115200);
   form_host_init();
 }
+
+bool IS_ON_MANUAL;
+bool MANUAL_RELAY_STATE;
+int UP_TEMP;
+int UP_HMDT;
+int UP_LGHT;
+int LR_TEMP;
+int LR_HMDT;
+int LR_LGHT;
+bool MOTION_TRIGGER;
+
+bool RELAY_CHANGE_TRACKER = false;
 
 void loop()
 {
@@ -43,10 +57,78 @@ void loop()
     if (!brokeass.is_broker_connected())
     {
       brokeass.connect();
-      brokeass.subscribe("/broken/ass");
+      brokeass.subscribe("smartypantsswitch/to_esp");
     }
     brokeass.loop();
-    Serial.println(brokeass.get_message("/broken/ass"));
+
+    // incoming command is handled here
+
+    Serial.println(); // handle incoming payload here
+    StaticJsonDocument<500> command;
+    String msg = brokeass.get_message("smartypantsswitch/to_esp").c_str();
+    Serial.println(msg);
+    if (msg != "")
+    {
+      deserializeJson(command, msg.c_str());
+      IS_ON_MANUAL = command["manual"];
+      MANUAL_RELAY_STATE = command["relay"];
+      UP_HMDT = command["upper_humidity"];
+      UP_LGHT = command["upper_light"];
+      UP_TEMP = command["upper_temp"];
+      LR_HMDT = command["lower_humidity"];
+      LR_LGHT = command["lower_light"];
+      LR_TEMP = command["lower_temp"];
+      MOTION_TRIGGER = command["motion_trigger"];
+    }
+
+    if (IS_ON_MANUAL)
+    {
+      Serial.println("on manual, relay sig " + String(MANUAL_RELAY_STATE));
+      if (MANUAL_RELAY_STATE)
+      {
+        rl.turn_on();
+      }
+      else
+      {
+        rl.turn_off();
+      }
+      // lastPublish = 10000;
+    }
+    else
+    {
+      // bool cond_bool = LR_HMDT <= DHTSensor.get_humidity() && DHTSensor.get_humidity() <= UP_HMDT &&
+      //                  LR_LGHT <= lightSensor.get_light_analog() && lightSensor.get_light_analog() <= UP_LGHT &&
+      //                  LR_TEMP <= DHTSensor.get_temp() && DHTSensor.get_temp() <= UP_TEMP;
+      //  MOTION_TRIGGER == motionSensor.get_motion();
+      bool hmdt, lght, tmp, motn;
+      hmdt = LR_HMDT <= DHTSensor.get_humidity() && DHTSensor.get_humidity() <= UP_HMDT;
+      lght = LR_LGHT <= lightSensor.get_light_analog() && lightSensor.get_light_analog() <= UP_LGHT;
+      tmp = LR_TEMP <= DHTSensor.get_temp() && DHTSensor.get_temp() <= UP_TEMP;
+      motn = MOTION_TRIGGER == motionSensor.get_motion();
+
+      Serial.println(String("humidity check: ") + String(hmdt) + String(" sensing: ") + String(DHTSensor.get_humidity()));
+      Serial.println(String("light check: ") + String(lght) + String(" sensing: ") + String(lightSensor.get_light_analog()));
+      Serial.println(String("temperature check: ") + String(tmp) + String(" sensing: ") + String(DHTSensor.get_temp()));
+      Serial.println(String("motion check: ") + String(motn) + String(" sensing: ") + String(motionSensor.get_motion()));
+
+      bool cond_bool = hmdt && lght && tmp && motn;
+
+      Serial.println("on auto, relay sig " + String(cond_bool));
+      if (cond_bool)
+      {
+        rl.turn_on();
+      }
+      else
+      {
+        rl.turn_off();
+      }
+      // lastPublish = 10000;
+    }
+
+    if (rl.get_changed())
+      lastPublish = 10000;
+    // telemetry broadcast is handled here
+
     // Create a JSON document
     if (millis() - lastPublish >= 10000)
     {
@@ -65,11 +147,13 @@ void loop()
 
       doc["light"] = lightSensor.get_light_analog();
       doc["motion"] = motionSensor.get_motion();
-
+      doc["relay"] = rl.get_state_NO();
       String jsonString;
       serializeJson(doc, jsonString);
 
-      brokeass.publish("MSSV/temperature", jsonString.c_str());
+      Serial.println(String("msg to server is: |") + jsonString + String("|"));
+
+      brokeass.publish("smartypantsswitch/to_web", jsonString.c_str());
       lastPublish = millis();
     }
   }

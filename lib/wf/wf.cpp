@@ -54,14 +54,26 @@ void hotspot_off()
 
 void root_action()
 {
-    wififormserver.send(200, "text/html",
-                        "<form method='POST' action='/connect'>"
-                        "<label for=' fname'>SSID:</label><br>"
-                        "<input type='text' id='ssid' name='ssid' value=''><br>"
-                        "<label for='lname'>PASSWORD:</label><br>"
-                        "<input type='text' id='pssw' name='pssw' value=''><br><br>"
-                        "<input type='submit' value='Submit'>"
-                        "</form>");
+    String frm_html = "<!DOCTYPE html> <html> <style>     body {         background-color: grey;     }      h1 {         color: black;     }      p {         color: orange;     }      div {         width: auto;         margin: auto;     } </style>  <head>     <title>configure wifi for the smartass switch</title> </head>  <body>     <div>         <h1>Configure wifi connection for your smartypants switch</h1>         <form method='POST' action='/connect'>             <label for=' fname'>SSID:</label><br>             <input type='text' id='ssid' name='ssid' value=''><br>             <label for='lname'>PASSWORD:</label><br>             <input type='text' id='pssw' name='pssw' value=''><br><br>             <input type='submit' value='Submit'>         </form>     </div>     <hr width= 'auto'>     <div>         <h1>Networks the ESP32 can connect to:</h1>";
+    String end_html = "    </div></body></html>";
+    String ssid_html_list = "<p>";
+
+    int ssid_cnt = WiFi.scanNetworks();
+    for (int i = 0; i < ssid_cnt; i++)
+    {
+        ssid_html_list += WiFi.SSID(i) + "<br>";
+    }
+    ssid_html_list += "</p>";
+
+    // wififormserver.send(200, "text/html",
+    //                     "<form method='POST' action='/connect'>"
+    //                     "<label for=' fname'>SSID:</label><br>"
+    //                     "<input type='text' id='ssid' name='ssid' value=''><br>"
+    //                     "<label for='lname'>PASSWORD:</label><br>"
+    //                     "<input type='text' id='pssw' name='pssw' value=''><br><br>"
+    //                     "<input type='submit' value='Submit'>"
+    //                     "</form>");
+    wififormserver.send(200, "text/html", (frm_html + ssid_html_list + end_html).c_str());
 }
 
 void submit_action()
