@@ -8,8 +8,6 @@
 #include <cmath>
 #include <relay.h>
 
-// String ssid = "j4_big_brotha";
-// String password = "wokfuckboi";
 String host = "broker.hivemq.com";
 int port = 1883;
 
@@ -45,14 +43,15 @@ void loop()
 {
   if (!is_connected()) // if not connected, turn on the hotspot, host the site, handle the inputs and connect
   {
-    hotspot_on();
-    form_on();
-    form_handleClient();
+    // hotspot_on();
+    // form_on();
+    // form_handleClient();
+    init_wifi_fetch();
   }
   else // if already connectd, turn off the site and hotspot, do the needful
   {
-    form_off();
-    hotspot_off();
+    // form_off();
+    // hotspot_off();
 
     if (!brokeass.is_broker_connected())
     {

@@ -54,7 +54,7 @@ void hotspot_off()
 
 void root_action()
 {
-    String frm_html = "<!DOCTYPE html> <html> <style>     body {         background-color: grey;     }      h1 {         color: black;     }      p {         color: orange;     }      div {         width: auto;         margin: auto;     } </style>  <head>     <title>configure wifi for the smartass switch</title> </head>  <body>     <div>         <h1>Configure wifi connection for your smartypants switch</h1>         <form method='POST' action='/connect'>             <label for=' fname'>SSID:</label><br>             <input type='text' id='ssid' name='ssid' value=''><br>             <label for='lname'>PASSWORD:</label><br>             <input type='text' id='pssw' name='pssw' value=''><br><br>             <input type='submit' value='Submit'>         </form>     </div>     <hr width= 'auto'>     <div>         <h1>Networks the ESP32 can connect to:</h1>";
+    String frm_html = "<!DOCTYPE html> <html> <style>     body {         background-color: grey;     }      h1 {         color: black;     }      p {         color: orange;     }      div {         width: auto;         margin: auto;     } </style>  <head>     <title>configure wifi for the smartass switch</title> </head>  <body>     <div>         <h1>Configure wifi connection for your smartypants switch</h1>         <form method='POST' action='/connect'>             <label for='ssid'>SSID:</label><br>             <input type='text' id='ssid' name='ssid' value=''><br>             <label for='pssw'>PASSWORD:</label><br>             <input type='text' id='pssw' name='pssw' value=''><br><br>             <input type='submit' value='Submit'>         </form>     </div>     <hr width= 'auto'>     <div>         <h1>Networks the ESP32 can connect to:</h1>";
     String end_html = "    </div></body></html>";
     String ssid_html_list = "<p>";
 
@@ -81,8 +81,8 @@ void submit_action()
     String SSID = wififormserver.arg("ssid");
     String PSSW = wififormserver.arg("pssw");
     Serial.printf("Received SSID: |%s|, Password: |%s|\n", SSID.c_str(), PSSW.c_str());
-    wififormserver.send(200, "text/html",
-                        "<p> we have your wifi credentials </p>");
+    // wififormserver.send(200, "text/html",
+    //                     "<p> connected!!! </p>");
     wifi_connect(SSID.c_str(), PSSW.c_str());
 }
 
@@ -113,4 +113,23 @@ void form_off()
 void form_handleClient()
 {
     wififormserver.handleClient();
+}
+
+void init_wifi_fetch()
+{
+    hotspot_on();
+    form_on();
+    while (1)
+    {
+        hotspot_on();
+        form_handleClient();
+        delay(500);
+        if (is_connected())
+        {
+            delay(2000);
+            form_off();
+            hotspot_off();
+            break;
+        }
+    }
 }

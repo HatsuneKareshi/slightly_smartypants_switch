@@ -18,3 +18,7 @@ void form_host_init();    // to init the server
 void form_on();           // to turn it on when disconnected from wifi
 void form_off();          // to turn it off when connected to wifi
 void form_handleClient(); // needs to be called constantly
+
+// the function declared below is the wifi connect setup handler
+
+void init_wifi_fetch();
