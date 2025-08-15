@@ -124,12 +124,8 @@ void loop()
       // lastPublish = 10000;
     }
 
-    if (rl.get_changed())
-      lastPublish = 10000;
-    // telemetry broadcast is handled here
-
     // Create a JSON document
-    if (millis() - lastPublish >= 10000)
+    if (millis() - lastPublish >= 10000 || rl.get_changed()) // if more than 10s or relay just changed
     {
       StaticJsonDocument<200> doc;
       float temp = DHTSensor.get_temp();
